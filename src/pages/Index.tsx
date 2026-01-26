@@ -22,7 +22,6 @@ import { RiskBreakdown } from '@/components/RiskBreakdown';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
 import { SOSButton, EmergencyCallButton } from '@/components/SOSButton';
 import { EmergencyChatbot } from '@/components/EmergencyChatbot';
-import { FloodMap } from '@/components/FloodMap';
 import { Location, FloodRiskData } from '@/types/flood';
 import { calculateFloodRisk, getSafetyInstructions } from '@/lib/floodRiskCalculator';
 import { useWeather } from '@/hooks/useWeather';
@@ -260,13 +259,14 @@ export default function Index() {
             <p className="text-muted-foreground">View flood zones, emergency services, and safe routes</p>
           </div>
           
-          <div className="map-container h-[500px]">
-            <FloodMap 
-              location={selectedLocation} 
-              riskLevel={riskData?.level || 'low'} 
-              showServices 
-              className="h-full"
-            />
+          <div className="h-[500px] flex items-center justify-center bg-muted/20 rounded-lg border border-border">
+            <div className="text-center p-8">
+              <MapPin className="w-16 h-16 mx-auto mb-4 text-primary" />
+              <h3 className="text-xl font-semibold mb-2">Interactive Flood Map</h3>
+              <p className="text-muted-foreground mb-4">
+                Map temporarily unavailable - react-leaflet compatibility fix in progress
+              </p>
+            </div>
           </div>
         </div>
       </section>
