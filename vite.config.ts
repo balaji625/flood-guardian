@@ -20,6 +20,5 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
-    exclude: ['leaflet-routing-machine', 'react-leaflet'],
   },
 }));
