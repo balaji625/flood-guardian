@@ -97,4 +97,12 @@ export interface AuthUser {
   role: UserRole;
   name: string;
   department?: string;
+  stationName?: string;
+  stationAddress?: string;
+  phone?: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  verified?: boolean;
 }
