@@ -22,6 +22,8 @@ import { RiskBreakdown } from '@/components/RiskBreakdown';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
 import { SOSButton, EmergencyCallButton } from '@/components/SOSButton';
 import { EmergencyChatbot } from '@/components/EmergencyChatbot';
+import { FloodMap } from '@/components/FloodMap';
+import { CrowdReportModal } from '@/components/CrowdReportModal';
 import { Location, FloodRiskData } from '@/types/flood';
 import { calculateFloodRisk, getSafetyInstructions } from '@/lib/floodRiskCalculator';
 import { useWeather } from '@/hooks/useWeather';
@@ -45,6 +47,7 @@ export default function Index() {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [riskData, setRiskData] = useState<FloodRiskData | null>(null);
   const [showSOSModal, setShowSOSModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const { weather, fetchWeather } = useWeather();
 
   const handleLocationSelect = async (location: Location) => {
@@ -254,19 +257,28 @@ export default function Index() {
       {/* Map Section */}
       <section id="map" className="py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">Live Flood Map</h2>
-            <p className="text-muted-foreground">View flood zones, emergency services, and safe routes</p>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">Live Flood Map</h2>
+              <p className="text-muted-foreground">View flood zones, emergency services, and safe routes</p>
+            </div>
+            <Button
+              onClick={() => setShowReportModal(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              Report Flooding
+            </Button>
           </div>
           
-          <div className="h-[500px] flex items-center justify-center bg-muted/20 rounded-lg border border-border">
-            <div className="text-center p-8">
-              <MapPin className="w-16 h-16 mx-auto mb-4 text-primary" />
-              <h3 className="text-xl font-semibold mb-2">Interactive Flood Map</h3>
-              <p className="text-muted-foreground mb-4">
-                Map temporarily unavailable - react-leaflet compatibility fix in progress
-              </p>
-            </div>
+          <div className="h-[500px] rounded-lg overflow-hidden border border-border">
+            <FloodMap 
+              location={selectedLocation} 
+              riskLevel={riskData?.level || 'low'} 
+              showServices 
+              className="h-full w-full" 
+            />
           </div>
         </div>
       </section>
@@ -377,6 +389,13 @@ export default function Index() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Crowd Report Modal */}
+      <CrowdReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        location={selectedLocation}
+      />
     </div>
   );
 }

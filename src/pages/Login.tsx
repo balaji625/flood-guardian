@@ -160,6 +160,17 @@ export default function Login() {
               ))}
             </div>
           </div>
+
+          {/* Register Link */}
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            New authority?{' '}
+            <button
+              onClick={() => navigate('/register')}
+              className="text-primary hover:underline"
+            >
+              Register here
+            </button>
+          </p>
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
