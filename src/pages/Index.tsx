@@ -20,7 +20,7 @@ import { LocationSearch } from '@/components/LocationSearch';
 import { RiskScoreGauge } from '@/components/RiskScoreGauge';
 import { RiskBreakdown } from '@/components/RiskBreakdown';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
-import { SOSButton, EmergencyCallButton } from '@/components/SOSButton';
+import { SOSButton, EmergencyCallButton, SOSModal } from '@/components/SOSButton';
 import { EmergencyChatbot } from '@/components/EmergencyChatbot';
 import { FloodMap } from '@/components/FloodMap';
 import { CrowdReportModal } from '@/components/CrowdReportModal';
@@ -65,7 +65,6 @@ export default function Index() {
 
   const handleSOS = () => {
     setShowSOSModal(true);
-    // In real app, would trigger SOS to database
   };
 
   return (
@@ -345,50 +344,7 @@ export default function Index() {
       <EmergencyChatbot location={selectedLocation} riskLevel={riskData?.level} />
 
       {/* SOS Modal */}
-      <AnimatePresence>
-        {showSOSModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowSOSModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-card rounded-2xl p-8 max-w-md w-full border border-destructive"
-            >
-              <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-4">
-                  <AlertTriangle className="w-10 h-10 text-destructive" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">SOS Sent!</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your emergency signal has been sent to nearby responders. Help is on the way.
-                </p>
-                <div className="space-y-3">
-                  <EmergencyCallButton
-                    label="Call Emergency"
-                    number="112"
-                    variant="ambulance"
-                    className="w-full justify-center"
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowSOSModal(false)}
-                    className="w-full"
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SOSModal isOpen={showSOSModal} onClose={() => setShowSOSModal(false)} />
 
       {/* Crowd Report Modal */}
       <CrowdReportModal

@@ -28,6 +28,7 @@ const DEMO_USERS: Record<string, AuthUser> = {
   'hospital@flood.gov': { uid: 'hosp1', email: 'hospital@flood.gov', role: 'hospital', name: 'Dr. Sharma', department: 'Emergency Ward' },
   'ambulance@flood.gov': { uid: 'amb1', email: 'ambulance@flood.gov', role: 'ambulance', name: 'Control Room', department: 'Ambulance Services' },
   'fire@flood.gov': { uid: 'fire1', email: 'fire@flood.gov', role: 'fire', name: 'Fire Chief', department: 'Fire & Rescue' },
+  'doctor@flood.gov': { uid: 'doc1', email: 'doctor@flood.gov', role: 'doctor', name: 'Dr. Patel', department: 'Emergency Medicine' },
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

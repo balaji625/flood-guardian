@@ -89,7 +89,7 @@ export interface WeatherData {
   }[];
 }
 
-export type UserRole = 'admin' | 'authority' | 'police' | 'hospital' | 'ambulance' | 'fire';
+export type UserRole = 'admin' | 'authority' | 'police' | 'hospital' | 'ambulance' | 'fire' | 'doctor';
 
 export interface AuthUser {
   uid: string;
