@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   Waves,
   Bell,
@@ -9,7 +8,8 @@ import {
   Building2,
   Truck,
   Flame,
-  AlertTriangle
+  AlertTriangle,
+  Stethoscope
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthUser, UserRole } from '@/types/flood';
@@ -26,6 +26,7 @@ const roleIcons: Record<UserRole, React.ElementType> = {
   hospital: Building2,
   ambulance: Truck,
   fire: Flame,
+  doctor: Stethoscope,
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -35,6 +36,7 @@ const roleLabels: Record<UserRole, string> = {
   hospital: 'Hospital',
   ambulance: 'Ambulance',
   fire: 'Fire & Rescue',
+  doctor: 'Doctor',
 };
 
 export function DashboardHeader({ user, onSignOut }: DashboardHeaderProps) {
