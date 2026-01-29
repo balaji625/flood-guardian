@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
@@ -20,14 +20,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo users for testing
+// Demo users for testing - Government authority roles
 const DEMO_USERS: Record<string, AuthUser> = {
-  'admin@flood.gov': { uid: 'admin1', email: 'admin@flood.gov', role: 'admin', name: 'System Admin', department: 'IT' },
-  'authority@flood.gov': { uid: 'auth1', email: 'authority@flood.gov', role: 'authority', name: 'District Collector', department: 'Disaster Management' },
-  'police@flood.gov': { uid: 'police1', email: 'police@flood.gov', role: 'police', name: 'Inspector Kumar', department: 'Emergency Response' },
+  'admin@flood.gov': { uid: 'admin1', email: 'admin@flood.gov', role: 'admin', name: 'System Admin', department: 'IT Administration' },
+  'authority@flood.gov': { uid: 'auth1', email: 'authority@flood.gov', role: 'authority', name: 'District Collector', department: 'Disaster Management Cell' },
+  'police@flood.gov': { uid: 'police1', email: 'police@flood.gov', role: 'police', name: 'Inspector Kumar', department: 'Emergency Response Unit' },
   'hospital@flood.gov': { uid: 'hosp1', email: 'hospital@flood.gov', role: 'hospital', name: 'Dr. Sharma', department: 'Emergency Ward' },
   'ambulance@flood.gov': { uid: 'amb1', email: 'ambulance@flood.gov', role: 'ambulance', name: 'Control Room', department: 'Ambulance Services' },
-  'fire@flood.gov': { uid: 'fire1', email: 'fire@flood.gov', role: 'fire', name: 'Fire Chief', department: 'Fire & Rescue' },
+  'fire@flood.gov': { uid: 'fire1', email: 'fire@flood.gov', role: 'fire', name: 'Fire Chief', department: 'Fire & Rescue Services' },
   'doctor@flood.gov': { uid: 'doc1', email: 'doctor@flood.gov', role: 'doctor', name: 'Dr. Patel', department: 'Emergency Medicine' },
 };
 
@@ -36,12 +36,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
+  // Initialize auth state listener ONCE
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         setFirebaseUser(fbUser);
-        // Try to get user role from database
         try {
           const userRef = ref(database, `users/${fbUser.uid}`);
           const snapshot = await get(userRef);
@@ -53,16 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: userData.role,
               name: userData.name,
               department: userData.department,
+              stationName: userData.stationName,
+              stationAddress: userData.stationAddress,
+              phone: userData.phone,
+              location: userData.location,
+              verified: userData.verified,
             });
           } else {
-            // Check demo users
             const demoUser = DEMO_USERS[fbUser.email || ''];
             if (demoUser) {
               setUser({ ...demoUser, uid: fbUser.uid });
             }
           }
         } catch {
-          // Fallback to demo user
           const demoUser = DEMO_USERS[fbUser.email || ''];
           if (demoUser) {
             setUser({ ...demoUser, uid: fbUser.uid });
@@ -73,30 +77,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
       setLoading(false);
+      setInitialized(true);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  // Optimized sign in - immediate response for demo users
+  const signIn = useCallback(async (email: string, password: string) => {
     setError(null);
+    
+    // For demo users, immediately set user state without waiting for Firebase
+    const demoUser = DEMO_USERS[email];
+    if (demoUser && password === 'demo123') {
+      setUser(demoUser);
+      setFirebaseUser(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      // For demo purposes, accept any password for demo users
-      if (DEMO_USERS[email]) {
-        // Simulate successful login for demo
-        const demoUser = DEMO_USERS[email];
-        setUser(demoUser);
-        setFirebaseUser(null);
-        setLoading(false);
-        return;
-      }
-      
       await signInWithEmailAndPassword(auth, email, password);
+      // Auth state listener will handle the rest
     } catch (err: any) {
-      // For demo, still allow login with demo credentials
-      if (DEMO_USERS[email] && password === 'demo123') {
-        const demoUser = DEMO_USERS[email];
+      // Fallback for demo users if Firebase fails
+      if (demoUser) {
         setUser(demoUser);
         setLoading(false);
         return;
@@ -105,19 +111,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       throw err;
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await firebaseSignOut(auth);
-      setUser(null);
-      setFirebaseUser(null);
-    } catch (err: any) {
-      // Still clear local state
-      setUser(null);
-      setFirebaseUser(null);
+    } catch {
+      // Still clear local state even if Firebase fails
     }
-  };
+    setUser(null);
+    setFirebaseUser(null);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, firebaseUser, loading, signIn, signOut, error }}>

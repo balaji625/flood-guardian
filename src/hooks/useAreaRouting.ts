@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ref, query, orderByChild, equalTo, onValue, push, set, update } from 'firebase/database';
+import { ref, onValue, push, set, update } from 'firebase/database';
 import { database } from '@/lib/firebase';
 import { 
   AuthorityRegistration, 
   AuthorityType, 
-  ServiceArea, 
   calculateDistanceKm,
   getAuthoritiesForEmergency 
 } from '@/types/authority';
@@ -13,6 +12,15 @@ import { SOSRequest, CrowdReport } from '@/types/flood';
 interface NearbyAuthority extends AuthorityRegistration {
   distance: number;
 }
+
+// Map SOS emergency types to primary authority types
+const EMERGENCY_AUTHORITY_MAP: Record<string, AuthorityType[]> = {
+  'flood': ['authority', 'police', 'fire'],
+  'trapped': ['fire', 'police', 'ambulance'],
+  'medical': ['ambulance', 'hospital', 'doctor'],
+  'fire': ['fire', 'police', 'ambulance'],
+  'other': ['police', 'authority'],
+};
 
 export function useAreaRouting() {
   const [authorities, setAuthorities] = useState<AuthorityRegistration[]>([]);
@@ -61,12 +69,13 @@ export function useAreaRouting() {
     lat: number,
     lng: number,
     emergencyType: string,
-    limit: number = 5
+    limit: number = 10
   ): NearbyAuthority[] => {
-    const relevantTypes = getAuthoritiesForEmergency(emergencyType);
+    // Get authority types that should handle this emergency
+    const primaryTypes = EMERGENCY_AUTHORITY_MAP[emergencyType] || ['police', 'authority'];
     
     return authorities
-      .filter(auth => relevantTypes.includes(auth.authorityType))
+      .filter(auth => primaryTypes.includes(auth.authorityType))
       .map(auth => ({
         ...auth,
         distance: calculateDistanceKm(lat, lng, auth.location.lat, auth.location.lng),
@@ -75,22 +84,37 @@ export function useAreaRouting() {
       .slice(0, limit);
   }, [authorities]);
 
-  // Auto-route SOS request to nearest authorities
+  // Smart routing: Route SOS request to ONLY the relevant authority type based on emergency
   const routeSOSRequest = useCallback(async (sos: SOSRequest): Promise<string[]> => {
-    const nearbyAuthorities = findNearestAuthorities(
-      sos.location.lat,
-      sos.location.lng,
-      sos.emergencyType,
-      10
-    );
-
-    if (nearbyAuthorities.length === 0) {
-      console.warn('No authorities found for SOS routing');
-      return [];
+    // Get the primary authority types for this emergency
+    const primaryTypes = EMERGENCY_AUTHORITY_MAP[sos.emergencyType] || ['police'];
+    
+    // Find nearest authorities of each primary type
+    const assignedUids: string[] = [];
+    
+    for (const authorityType of primaryTypes) {
+      const nearbyOfType = authorities
+        .filter(auth => auth.authorityType === authorityType)
+        .map(auth => ({
+          ...auth,
+          distance: calculateDistanceKm(
+            sos.location.lat, 
+            sos.location.lng, 
+            auth.location.lat, 
+            auth.location.lng
+          ),
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 3); // Top 3 nearest of each type
+      
+      assignedUids.push(...nearbyOfType.map(a => a.uid));
     }
 
-    // Route to all nearby relevant authorities
-    const assignedUids = nearbyAuthorities.map(a => a.uid);
+    if (assignedUids.length === 0) {
+      console.warn('No authorities found for SOS routing, broadcasting to all');
+      // Fallback: broadcast to all authorities
+      assignedUids.push(...authorities.slice(0, 10).map(a => a.uid));
+    }
 
     // Create routing record
     const routingRef = push(ref(database, 'requestRouting'));
@@ -112,13 +136,15 @@ export function useAreaRouting() {
     });
 
     return assignedUids;
-  }, [findNearestAuthorities]);
+  }, [authorities]);
 
-  // Route crowd report to relevant authorities
+  // Route crowd report to ALL authorities (as per requirement #5)
   const routeCrowdReport = useCallback(async (report: CrowdReport): Promise<string[]> => {
-    // Find authorities who can verify reports in the area
-    const nearbyAuthorities = authorities
-      .filter(auth => ['authority', 'admin', 'police', 'fire'].includes(auth.authorityType))
+    // Broadcast to ALL authority types that can verify reports
+    const verifyingTypes: AuthorityType[] = ['authority', 'admin', 'police', 'fire', 'hospital', 'ambulance'];
+    
+    const allRelevantAuthorities = authorities
+      .filter(auth => verifyingTypes.includes(auth.authorityType))
       .map(auth => ({
         ...auth,
         distance: calculateDistanceKm(
@@ -128,10 +154,9 @@ export function useAreaRouting() {
           auth.location.lng
         ),
       }))
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 5);
+      .sort((a, b) => a.distance - b.distance);
 
-    const assignedUids = nearbyAuthorities.map(a => a.uid);
+    const assignedUids = allRelevantAuthorities.map(a => a.uid);
 
     // Create routing record
     const routingRef = push(ref(database, 'requestRouting'));
@@ -142,7 +167,15 @@ export function useAreaRouting() {
       location: report.location,
       waterLevel: report.waterLevel,
       status: 'pending',
+      broadcastToAll: true,
       createdAt: Date.now(),
+    });
+
+    // Update report with routing info
+    await update(ref(database, `crowdReports/${report.id}`), {
+      routedTo: assignedUids,
+      routedAt: Date.now(),
+      broadcastToAll: true,
     });
 
     return assignedUids;
@@ -178,7 +211,7 @@ export function useAreaRouting() {
   };
 }
 
-// Hook to get requests for current authority
+// Hook to get requests for current authority with smart filtering
 export function useAuthorityRequests(authorityUid: string, authorityType: AuthorityType) {
   const [sosRequests, setSOSRequests] = useState<SOSRequest[]>([]);
   const [reports, setReports] = useState<CrowdReport[]>([]);
@@ -187,7 +220,7 @@ export function useAuthorityRequests(authorityUid: string, authorityType: Author
   useEffect(() => {
     if (!authorityUid) return;
 
-    // Subscribe to SOS requests routed to this authority
+    // Subscribe to SOS requests
     const sosRef = ref(database, 'sosRequests');
     const unsubscribeSOS = onValue(sosRef, (snapshot) => {
       const data = snapshot.val();
@@ -195,8 +228,19 @@ export function useAuthorityRequests(authorityUid: string, authorityType: Author
         const requests: SOSRequest[] = Object.entries(data)
           .map(([id, value]: [string, any]) => ({ id, ...value }))
           .filter((sos: any) => {
-            // Show if routed to this authority OR if no routing yet (legacy data)
-            return sos.routedTo?.includes(authorityUid) || !sos.routedTo;
+            // Smart filtering based on emergency type and authority type
+            const primaryTypes = EMERGENCY_AUTHORITY_MAP[sos.emergencyType] || ['police'];
+            
+            // Show if:
+            // 1. Explicitly routed to this authority
+            // 2. This authority type handles this emergency type (for legacy/unrouted requests)
+            // 3. Admin/authority can see everything
+            return (
+              sos.routedTo?.includes(authorityUid) ||
+              (!sos.routedTo && primaryTypes.includes(authorityType)) ||
+              authorityType === 'admin' ||
+              authorityType === 'authority'
+            );
           })
           .sort((a, b) => b.timestamp - a.timestamp);
         setSOSRequests(requests);
@@ -206,26 +250,24 @@ export function useAuthorityRequests(authorityUid: string, authorityType: Author
       setLoading(false);
     });
 
-    // Subscribe to crowd reports (for authorities that can verify)
-    if (['admin', 'authority', 'police', 'fire', 'hospital'].includes(authorityType)) {
-      const reportsRef = ref(database, 'crowdReports');
-      const unsubscribeReports = onValue(reportsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const reportsList: CrowdReport[] = Object.entries(data)
-            .map(([id, value]: [string, any]) => ({ id, ...value }))
-            .sort((a, b) => b.timestamp - a.timestamp);
-          setReports(reportsList);
-        }
-      });
+    // Subscribe to crowd reports - ALL authorities see reports (broadcast requirement)
+    const reportsRef = ref(database, 'crowdReports');
+    const unsubscribeReports = onValue(reportsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const reportsList: CrowdReport[] = Object.entries(data)
+          .map(([id, value]: [string, any]) => ({ id, ...value }))
+          .sort((a, b) => b.timestamp - a.timestamp);
+        setReports(reportsList);
+      } else {
+        setReports([]);
+      }
+    });
 
-      return () => {
-        unsubscribeSOS();
-        unsubscribeReports();
-      };
-    }
-
-    return () => unsubscribeSOS();
+    return () => {
+      unsubscribeSOS();
+      unsubscribeReports();
+    };
   }, [authorityUid, authorityType]);
 
   return { sosRequests, reports, loading };
