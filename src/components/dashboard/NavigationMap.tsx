@@ -118,8 +118,16 @@ export function NavigationMap({
     }
   };
 
-  const openGoogleMaps = (lat: number, lng: number) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  const openGoogleMapsNavigation = (lat: number, lng: number) => {
+    // Open Google Maps with navigation/directions
+    const url = userLocation 
+      ? `https://www.google.com/maps/dir/${userLocation[0]},${userLocation[1]}/${lat},${lng}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
+
+  const openGoogleMapsView = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
     window.open(url, '_blank');
   };
 
@@ -194,7 +202,7 @@ export function NavigationMap({
                     <div className="flex gap-2">
                       <Button 
                         size="sm" 
-                        onClick={() => openGoogleMaps(sos.location.lat, sos.location.lng)}
+                        onClick={() => openGoogleMapsNavigation(sos.location.lat, sos.location.lng)}
                         className="flex-1 gap-1"
                       >
                         <Navigation className="w-4 h-4" />
@@ -241,11 +249,11 @@ export function NavigationMap({
                   <div className="flex flex-col gap-2">
                     <Button
                       size="sm"
-                      onClick={() => openGoogleMaps(selectedSOS.location.lat, selectedSOS.location.lng)}
-                      className="gap-1"
+                      onClick={() => openGoogleMapsNavigation(selectedSOS.location.lat, selectedSOS.location.lng)}
+                      className="gap-1 bg-gradient-primary"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      Google Maps
+                      Navigate (Google Maps)
                     </Button>
                     {selectedSOS.contactNumber && (
                       <Button
