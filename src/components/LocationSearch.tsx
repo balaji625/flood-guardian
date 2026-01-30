@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Loader2, Navigation } from 'lucide-react';
+import { Search, MapPin, Loader2, Navigation, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Location } from '@/types/flood';
-import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface LocationSearchProps {
   onLocationSelect: (location: Location) => void;
@@ -16,9 +16,10 @@ export function LocationSearch({ onLocationSelect, className }: LocationSearchPr
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Location[]>([]);
   const [searching, setSearching] = useState(false);
-  const { getCurrentLocation, loading: geoLoading } = useGeolocation();
+  const [geoLoading, setGeoLoading] = useState(false);
 
-  const handleSearch = async (value: string) => {
+  // Debounced search handler
+  const handleSearch = useCallback(async (value: string) => {
     setQuery(value);
     if (value.length < 2) {
       setResults([]);
@@ -28,31 +29,134 @@ export function LocationSearch({ onLocationSelect, className }: LocationSearchPr
     setSearching(true);
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=in&limit=5`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=in&limit=5`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'FloodGuard Emergency System'
+          }
+        }
       );
+      
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      
       const data = await response.json();
-      setResults(data.map((item: any) => ({
+      const locations: Location[] = data.map((item: any) => ({
         lat: parseFloat(item.lat),
         lng: parseFloat(item.lon),
         name: item.display_name.split(',')[0],
         state: item.display_name.split(',').slice(-2, -1)[0]?.trim(),
-      })));
-    } catch {
+        district: item.display_name.split(',').slice(1, 2)[0]?.trim(),
+      }));
+      
+      setResults(locations);
+      
+      if (locations.length === 0 && value.length >= 3) {
+        toast.info('No locations found. Try a different search term.');
+      }
+    } catch (error) {
+      console.error('Location search error:', error);
+      toast.error('Search failed. Please try again.');
       setResults([]);
     } finally {
       setSearching(false);
     }
-  };
+  }, []);
 
   const handleGetCurrentLocation = async () => {
-    await getCurrentLocation();
-    // The location will be set via the hook
+    setGeoLoading(true);
+    
+    try {
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation not supported');
+      }
+
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        });
+      });
+
+      const { latitude: lat, longitude: lng } = position.coords;
+
+      // Reverse geocode to get location name
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'FloodGuard Emergency System'
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Reverse geocoding failed');
+        
+        const data = await response.json();
+        
+        const location: Location = {
+          lat,
+          lng,
+          name: data.address?.city || data.address?.town || data.address?.village || data.address?.suburb || 'Current Location',
+          district: data.address?.county || data.address?.state_district,
+          state: data.address?.state,
+          pincode: data.address?.postcode,
+        };
+        
+        setQuery(location.name);
+        onLocationSelect(location);
+        toast.success(`Location found: ${location.name}`);
+      } catch {
+        // If reverse geocoding fails, still use coordinates
+        const location: Location = {
+          lat,
+          lng,
+          name: 'Current Location',
+        };
+        setQuery('Current Location');
+        onLocationSelect(location);
+        toast.success('Location detected via GPS');
+      }
+    } catch (err) {
+      const error = err as GeolocationPositionError | Error;
+      let message = 'Failed to get location';
+      
+      if ('code' in error) {
+        switch (error.code) {
+          case 1:
+            message = 'Location access denied. Please enable location services in your browser settings.';
+            break;
+          case 2:
+            message = 'Location unavailable. Please try again.';
+            break;
+          case 3:
+            message = 'Location request timed out. Please try again.';
+            break;
+        }
+      }
+      
+      toast.error(message);
+      console.error('Geolocation error:', error);
+    } finally {
+      setGeoLoading(false);
+    }
   };
 
   const handleSelect = (location: Location) => {
     setQuery(location.name);
     setResults([]);
     onLocationSelect(location);
+    toast.success(`Selected: ${location.name}`);
+  };
+
+  const clearSearch = () => {
+    setQuery('');
+    setResults([]);
   };
 
   return (
@@ -64,17 +168,25 @@ export function LocationSearch({ onLocationSelect, className }: LocationSearchPr
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search village, city, or PIN code..."
-            className="pl-10 pr-4 h-12 text-lg bg-card border-border"
+            className="pl-10 pr-10 h-12 text-lg bg-card border-border"
           />
+          {query && !searching && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           {searching && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-primary" />
           )}
         </div>
         <Button
           onClick={handleGetCurrentLocation}
           disabled={geoLoading}
           variant="secondary"
-          className="h-12 px-4"
+          className="h-12 px-4 bg-gradient-to-r from-success to-emerald-500 text-success-foreground hover:opacity-90 border-0"
         >
           {geoLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -94,18 +206,22 @@ export function LocationSearch({ onLocationSelect, className }: LocationSearchPr
         >
           {results.map((location, index) => (
             <motion.button
-              key={`${location.lat}-${location.lng}`}
+              key={`${location.lat}-${location.lng}-${index}`}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
               onClick={() => handleSelect(location)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-colors text-left border-b border-border/50 last:border-0"
             >
-              <MapPin className="w-5 h-5 text-primary shrink-0" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shrink-0">
+                <MapPin className="w-4 h-4 text-primary-foreground" />
+              </div>
               <div>
                 <p className="font-medium">{location.name}</p>
-                {location.state && (
-                  <p className="text-sm text-muted-foreground">{location.state}</p>
+                {(location.district || location.state) && (
+                  <p className="text-sm text-muted-foreground">
+                    {[location.district, location.state].filter(Boolean).join(', ')}
+                  </p>
                 )}
               </div>
             </motion.button>
