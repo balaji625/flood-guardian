@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, 
@@ -19,10 +19,17 @@ import {
   Clock,
   ChevronDown,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Sparkles,
+  Mic,
+  MicOff,
+  History,
+  Trash2,
+  Volume2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Location, RiskLevel } from '@/types/flood';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -78,12 +85,12 @@ const EMERGENCY_NUMBERS = {
 };
 
 const QUICK_ACTIONS = [
-  { label: '🛡️ Is my area safe?', query: 'is my area safe' },
-  { label: '📋 What should I do?', query: 'what should i do in flood' },
-  { label: '🏥 Nearest hospital', query: 'find nearest hospital' },
-  { label: '🚨 Report flooding', query: 'report flooding' },
-  { label: '📞 Emergency numbers', query: 'emergency numbers' },
-  { label: '🗺️ Evacuation routes', query: 'show evacuation routes' },
+  { label: '🛡️ Is my area safe?', query: 'is my area safe', color: 'from-emerald-500 to-teal-500' },
+  { label: '📋 What should I do?', query: 'what should i do in flood', color: 'from-violet-500 to-purple-500' },
+  { label: '🏥 Nearest hospital', query: 'find nearest hospital', color: 'from-pink-500 to-rose-500' },
+  { label: '🚨 Report flooding', query: 'report flooding', color: 'from-orange-500 to-red-500' },
+  { label: '📞 Emergency numbers', query: 'emergency numbers', color: 'from-blue-500 to-cyan-500' },
+  { label: '🗺️ Evacuation routes', query: 'show evacuation routes', color: 'from-amber-500 to-yellow-500' },
 ];
 
 // Emergency services locations (sample data)
@@ -95,6 +102,7 @@ const NEARBY_SERVICES = [
   { lat: 19.075, lng: 72.875, label: 'Ambulance Depot', type: 'ambulance' },
 ];
 
+// AI-like response generation with typing effect
 function generateBotResponse(
   query: string, 
   riskLevel?: RiskLevel, 
@@ -214,7 +222,7 @@ function generateBotResponse(
     };
   }
   // Emergency numbers
-  else if (q.includes('number') || q.includes('call') || q.includes('phone') || q.includes('emergency')) {
+  else if (q.includes('number') || q.includes('call') || q.includes('phone') || q.includes('contact')) {
     content = `📞 **Emergency Contact Numbers**\n\n| Service | Number |\n|---------|--------|\n| 🚔 Police | 100 |\n| 🚑 Ambulance | 108 |\n| 🚒 Fire & Rescue | 101 |\n| 🆘 Disaster Management | 1078 |\n| 📞 Universal Emergency | 112 |\n| 👩 Women Helpline | 1091 |\n\n**Tip:** 112 works even without network coverage.`;
     actions = [
       { label: 'Police 100', type: 'call', value: EMERGENCY_NUMBERS.police, icon: <Shield className="w-4 h-4" /> },
@@ -231,6 +239,13 @@ function generateBotResponse(
       { label: 'Send SOS', type: 'sos', value: 'sos', icon: <AlertTriangle className="w-4 h-4" />, variant: 'destructive' },
     ];
   }
+  // Weather related
+  else if (q.includes('weather') || q.includes('rain') || q.includes('forecast')) {
+    content = `🌧️ **Weather Information**\n\nBased on current weather data:\n\n**Current Conditions:**\n• Heavy rainfall expected in many areas\n• High humidity levels\n• Strong winds in coastal regions\n\n**Recommendations:**\n• Stay indoors if possible\n• Monitor official weather alerts\n• Keep emergency supplies ready`;
+    actions = [
+      { label: 'Check Full Forecast', type: 'info', value: 'detailed weather forecast' },
+    ];
+  }
   // What to do
   else if (q.includes('what should') || q.includes('what do') || q.includes('how to') || q.includes('prepare')) {
     if (riskLevel === 'high' || riskLevel === 'critical') {
@@ -243,9 +258,17 @@ function generateBotResponse(
       content = `📋 **Flood Preparedness Guide**\n\n**Prepare Now:**\n1. 📱 Charge all devices fully\n2. 💧 Store drinking water (4L per person)\n3. 📄 Keep documents in waterproof bag\n4. 🗺️ Know evacuation routes\n5. 📞 Save emergency numbers\n6. 🔦 Keep flashlight & batteries ready\n7. 💊 Stock first-aid kit & medicines\n\n**Stay Informed:**\n• Monitor local news\n• Check official alerts\n• Follow authority instructions`;
     }
   }
+  // Greetings
+  else if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q.includes('good')) {
+    content = `👋 **Hello! I'm FloodGuard AI**\n\nI'm your official emergency response assistant. I'm here to help you with:\n\n• 🛡️ Real-time flood risk assessment\n• 📞 Emergency contact numbers\n• 🗺️ Evacuation routes & shelters\n• 🏥 Nearby hospitals & services\n• 🚨 SOS & incident reporting\n\n**How can I assist you today?**`;
+  }
+  // Thanks
+  else if (q.includes('thank') || q.includes('thanks')) {
+    content = `🙏 **You're welcome!**\n\nStay safe and don't hesitate to ask if you need any more assistance. Remember:\n\n• In emergencies, call **112**\n• For floods, call **1078**\n• Report any flooding you see\n\n**Stay alert, stay safe!**`;
+  }
   // Default
   else {
-    content = `👋 **Welcome to FloodGuard AI Assistant**\n\nI'm your official emergency response assistant. I can help you with:\n\n• 🛡️ Check if your area is safe\n• 📞 Access emergency numbers\n• 🗺️ Find evacuation routes & shelters\n• 🏥 Locate nearest hospitals\n• 🚨 Report flooding conditions\n• 📋 Get safety guidelines\n\n**What would you like to know?**`;
+    content = `👋 **FloodGuard AI Assistant**\n\nI understand you asked about: *"${query}"*\n\nI can help you with:\n\n• 🛡️ **Safety Check** - Is my area safe?\n• 📞 **Emergency Contacts** - Police, ambulance, fire\n• 🗺️ **Evacuation** - Routes & shelter locations\n• 🏥 **Medical** - Nearby hospitals\n• 🚨 **Reporting** - Report flooding\n• 📋 **Guidelines** - What to do in floods\n\n**Try asking something like:**\n- "Is my area safe?"\n- "Where is the nearest hospital?"\n- "Show emergency numbers"`;
     actions = QUICK_ACTIONS.slice(0, 3).map(a => ({
       label: a.label,
       type: 'info' as const,
@@ -266,7 +289,7 @@ function generateBotResponse(
 // Mini Map Component for chat
 function ChatMiniMap({ mapData }: { mapData: MapData }) {
   return (
-    <div className="mt-3 rounded-lg overflow-hidden border border-border h-48">
+    <div className="mt-3 rounded-xl overflow-hidden border-2 border-primary/30 h-48">
       <MapContainer
         center={[mapData.center.lat, mapData.center.lng]}
         zoom={mapData.zoom || 14}
@@ -301,17 +324,28 @@ export function AdvancedChatbot({
     {
       id: '1',
       type: 'bot',
-      content: `👋 **FloodGuard Emergency Assistant**\n\nI'm here to help you with flood safety information, emergency services, and real-time alerts.\n\n**Quick tip:** You can ask me about flood risk, nearby hospitals, evacuation routes, or emergency numbers.`,
+      content: `👋 **Welcome to FloodGuard AI**\n\nI'm your intelligent emergency assistant. Ask me anything about:\n\n• 🛡️ Flood safety & risk levels\n• 🏥 Nearby emergency services\n• 🗺️ Evacuation routes\n• 📞 Emergency contacts\n\n**Type your question below or use quick actions!**`,
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   const handleSend = async (query?: string) => {
     const message = query || input.trim();
@@ -328,8 +362,9 @@ export function AdvancedChatbot({
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
+    // Simulate AI thinking time with realistic delay
+    const thinkingTime = 600 + Math.random() * 600;
+    await new Promise(resolve => setTimeout(resolve, thinkingTime));
 
     // Generate bot response
     const botResponse = generateBotResponse(message, riskLevel, location);
@@ -351,11 +386,52 @@ export function AdvancedChatbot({
     }
   };
 
+  const handleVoiceInput = useCallback(() => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Voice input is not supported in this browser.');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+    };
+
+    recognition.start();
+  }, []);
+
+  const clearChat = () => {
+    setMessages([{
+      id: Date.now().toString(),
+      type: 'bot',
+      content: `🔄 **Chat Cleared**\n\nI'm ready to help you again! Ask me about flood safety, emergency services, or evacuation routes.`,
+      timestamp: new Date(),
+    }]);
+    setShowHistory(false);
+  };
+
   const formatContent = (content: string) => {
-    // Simple markdown-like formatting
+    // Enhanced markdown-like formatting
     return content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-primary">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br />');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   return (
@@ -367,21 +443,25 @@ export function AdvancedChatbot({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className={cn(
-              "absolute bottom-20 right-0 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden",
-              isExpanded ? "w-[420px] h-[600px]" : "w-80 sm:w-96"
+              "absolute bottom-20 right-0 bg-card border-2 border-primary/30 rounded-2xl shadow-2xl overflow-hidden",
+              isExpanded ? "w-[450px] h-[650px]" : "w-80 sm:w-[380px]"
             )}
+            style={{ boxShadow: '0 0 60px hsl(262 83% 58% / 0.2)' }}
           >
-            {/* Header */}
-            <div className="bg-gradient-primary p-4 flex items-center justify-between">
+            {/* Header - Colorful gradient */}
+            <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <Bot className="w-6 h-6 text-white" />
+                <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white">FloodGuard AI</h3>
-                  <p className="text-xs text-white/70 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    Official Emergency Assistant
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    FloodGuard AI
+                    <span className="px-2 py-0.5 text-[10px] bg-white/20 rounded-full">PRO</span>
+                  </h3>
+                  <p className="text-xs text-white/80 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Online • Ready to help
                   </p>
                 </div>
               </div>
@@ -389,8 +469,17 @@ export function AdvancedChatbot({
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={clearChat}
+                  className="text-white/80 hover:text-white hover:bg-white/20"
+                  title="Clear chat"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-white hover:bg-white/20"
+                  className="text-white/80 hover:text-white hover:bg-white/20"
                 >
                   {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </Button>
@@ -398,7 +487,7 @@ export function AdvancedChatbot({
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsOpen(false)}
-                  className="text-white hover:bg-white/20"
+                  className="text-white/80 hover:text-white hover:bg-white/20"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -408,35 +497,36 @@ export function AdvancedChatbot({
             {/* Messages */}
             <div 
               className={cn(
-                "overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-dark",
-                isExpanded ? "h-[440px]" : "h-72"
+                "overflow-y-auto p-4 space-y-4 custom-scrollbar",
+                isExpanded ? "h-[480px]" : "h-72"
               )}
+              style={{ background: 'linear-gradient(180deg, hsl(255 25% 8%) 0%, hsl(260 30% 6%) 100%)' }}
             >
               {messages.map((msg) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
                   className={cn(
                     'flex gap-2',
                     msg.type === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
                   {msg.type === 'bot' && (
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4 text-primary" />
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0 shadow-lg">
+                      <Bot className="w-4 h-4 text-white" />
                     </div>
                   )}
                   <div
                     className={cn(
                       'max-w-[85%] rounded-2xl px-4 py-3',
                       msg.type === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
+                        ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white'
+                        : 'bg-muted/80 border border-primary/20'
                     )}
                   >
                     <div 
-                      className="text-sm prose prose-sm prose-invert max-w-none"
+                      className="text-sm leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }}
                     />
                     
@@ -450,11 +540,11 @@ export function AdvancedChatbot({
                           <Button
                             key={i}
                             size="sm"
-                            variant={action.variant === 'destructive' ? 'destructive' : action.variant === 'warning' ? 'secondary' : 'outline'}
+                            variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
                             onClick={() => handleAction(action)}
                             className={cn(
-                              "text-xs gap-1",
-                              action.variant === 'destructive' && "animate-pulse"
+                              "text-xs gap-1 rounded-xl",
+                              action.variant === 'destructive' && "animate-pulse bg-gradient-to-r from-red-500 to-rose-600 border-0"
                             )}
                           >
                             {action.icon}
@@ -470,8 +560,8 @@ export function AdvancedChatbot({
                     </p>
                   </div>
                   {msg.type === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                      <User className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg">
+                      <User className="w-4 h-4 text-white" />
                     </div>
                   )}
                 </motion.div>
@@ -480,18 +570,18 @@ export function AdvancedChatbot({
               {/* Typing indicator */}
               {isTyping && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   className="flex gap-2"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4 text-primary" />
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
-                  <div className="bg-muted rounded-2xl px-4 py-3">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="bg-muted/80 border border-primary/20 rounded-2xl px-4 py-3">
+                    <div className="flex gap-1.5">
+                      <span className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-fuchsia-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 </motion.div>
@@ -500,8 +590,8 @@ export function AdvancedChatbot({
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Actions */}
-            <div className="px-4 py-2 border-t border-border overflow-x-auto bg-card">
+            {/* Quick Actions - Scrollable colorful chips */}
+            <div className="px-3 py-2 border-t border-primary/20 overflow-x-auto bg-card/50">
               <div className="flex gap-2 pb-1">
                 {QUICK_ACTIONS.map((action) => (
                   <Button
@@ -509,7 +599,10 @@ export function AdvancedChatbot({
                     variant="outline"
                     size="sm"
                     onClick={() => handleSend(action.query)}
-                    className="text-xs whitespace-nowrap shrink-0"
+                    className={cn(
+                      "text-xs whitespace-nowrap shrink-0 rounded-xl border-0",
+                      `bg-gradient-to-r ${action.color} text-white hover:opacity-90`
+                    )}
                   >
                     {action.label}
                   </Button>
@@ -517,44 +610,70 @@ export function AdvancedChatbot({
               </div>
             </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-border flex gap-2 bg-card">
-              <Input
+            {/* Input Area - Enhanced with voice */}
+            <div className="p-3 border-t border-primary/20 bg-card flex gap-2 items-end">
+              <Textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                placeholder="Ask about flood safety..."
-                className="flex-1"
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message..."
+                className="flex-1 min-h-[44px] max-h-[120px] resize-none rounded-xl border-primary/30 bg-muted/50 focus:border-primary"
                 disabled={isTyping}
+                rows={1}
               />
-              <Button 
-                onClick={() => handleSend()} 
-                size="icon"
-                disabled={isTyping || !input.trim()}
-                className="bg-gradient-primary"
-              >
-                {isTyping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  onClick={handleVoiceInput}
+                  size="icon"
+                  variant="outline"
+                  disabled={isTyping}
+                  className={cn(
+                    "rounded-xl border-primary/30",
+                    isListening && "bg-red-500 border-red-500 text-white animate-pulse"
+                  )}
+                  title="Voice input"
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+                <Button 
+                  onClick={() => handleSend()} 
+                  size="icon"
+                  disabled={isTyping || !input.trim()}
+                  className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0"
+                >
+                  {isTyping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Toggle Button with notification badge */}
+      {/* Toggle Button with animated gradient */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'w-14 h-14 rounded-full flex items-center justify-center shadow-xl',
-          'bg-gradient-primary text-white',
-          'hover:shadow-2xl transition-shadow',
-          isOpen && 'bg-muted'
+          'w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl relative',
+          'hover:shadow-3xl transition-shadow'
         )}
+        style={{
+          background: 'linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 75% 50%) 50%, hsl(330 80% 55%) 100%)',
+          boxShadow: '0 0 50px hsl(262 83% 58% / 0.4)'
+        }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        {/* Pulse ring */}
+        {/* Animated ring */}
         {!isOpen && (
-          <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
+          <>
+            <span className="absolute inset-0 rounded-2xl animate-ping opacity-20" 
+              style={{ background: 'linear-gradient(135deg, hsl(262 83% 58%), hsl(330 80% 55%))' }} 
+            />
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-card flex items-center justify-center animate-pulse">
+              <span className="text-[8px] text-white font-bold">1</span>
+            </span>
+          </>
         )}
         
         <AnimatePresence mode="wait">
@@ -565,7 +684,7 @@ export function AdvancedChatbot({
               animate={{ rotate: 0, opacity: 1 }}
               exit={{ rotate: 90, opacity: 0 }}
             >
-              <ChevronDown className="w-6 h-6" />
+              <ChevronDown className="w-7 h-7 text-white" />
             </motion.div>
           ) : (
             <motion.div
@@ -574,7 +693,7 @@ export function AdvancedChatbot({
               animate={{ rotate: 0, opacity: 1 }}
               exit={{ rotate: -90, opacity: 0 }}
             >
-              <MessageCircle className="w-6 h-6" />
+              <MessageCircle className="w-7 h-7 text-white" />
             </motion.div>
           )}
         </AnimatePresence>

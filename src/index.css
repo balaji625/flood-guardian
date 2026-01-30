@@ -9,84 +9,91 @@
 
 @layer base {
   :root {
-    /* Official Government Color Palette - Navy & Gold */
-    --background: 220 20% 4%;
+    /* Vibrant Modern Color Palette */
+    --background: 250 30% 6%;
     --foreground: 210 40% 98%;
 
-    /* Cards & Surfaces - Elevated slate */
-    --card: 220 20% 7%;
+    /* Cards & Surfaces - Deep purple tint */
+    --card: 255 25% 9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 220 20% 9%;
+    --popover: 255 25% 11%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary - Government Blue with Gold accent */
-    --primary: 210 80% 55%;
+    /* Primary - Vibrant Purple/Violet */
+    --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Slate for official look */
-    --secondary: 215 20% 18%;
-    --secondary-foreground: 210 40% 92%;
+    /* Secondary - Teal/Cyan blend */
+    --secondary: 180 60% 20%;
+    --secondary-foreground: 180 100% 90%;
 
     /* Muted elements */
-    --muted: 215 20% 12%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 250 20% 14%;
+    --muted-foreground: 250 15% 55%;
 
-    /* Accent - Government Gold */
-    --accent: 45 90% 50%;
-    --accent-foreground: 220 20% 10%;
+    /* Accent - Electric Pink/Magenta */
+    --accent: 330 80% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Status Colors - Emergency System */
-    --destructive: 0 75% 50%;
+    /* Status Colors - Vibrant */
+    --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 95% 50%;
-    --warning-foreground: 38 95% 10%;
+    --warning: 38 100% 55%;
+    --warning-foreground: 38 100% 10%;
 
-    --success: 142 70% 45%;
-    --success-foreground: 142 70% 95%;
+    --success: 155 75% 50%;
+    --success-foreground: 155 75% 95%;
 
-    --critical: 0 85% 40%;
+    --critical: 350 90% 45%;
     --critical-foreground: 0 0% 100%;
 
-    /* Flood Risk Colors */
-    --risk-low: 142 70% 45%;
-    --risk-medium: 38 95% 50%;
-    --risk-high: 0 75% 50%;
-    --risk-critical: 0 85% 35%;
+    /* Flood Risk Colors - More vibrant */
+    --risk-low: 155 80% 50%;
+    --risk-medium: 38 100% 55%;
+    --risk-high: 0 85% 55%;
+    --risk-critical: 350 90% 40%;
 
     /* UI Elements */
-    --border: 215 20% 16%;
-    --input: 215 20% 10%;
-    --ring: 210 80% 55%;
+    --border: 255 20% 18%;
+    --input: 255 20% 12%;
+    --ring: 262 83% 58%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    /* Government Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(210 80% 55%) 0%, hsl(220 75% 45%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(45 90% 50%) 0%, hsl(35 95% 45%) 100%);
-    --gradient-danger: linear-gradient(135deg, hsl(0 75% 50%) 0%, hsl(15 80% 45%) 100%);
-    --gradient-warning: linear-gradient(135deg, hsl(38 95% 50%) 0%, hsl(25 95% 45%) 100%);
-    --gradient-safe: linear-gradient(135deg, hsl(142 70% 45%) 0%, hsl(160 65% 40%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(220 20% 7%) 0%, hsl(220 20% 3%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 20% 6%) 0%, hsl(215 25% 10%) 50%, hsl(220 20% 5%) 100%);
-    --gradient-official: linear-gradient(180deg, hsl(220 20% 8%) 0%, hsl(220 20% 5%) 100%);
+    /* Vibrant Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 75% 50%) 50%, hsl(330 80% 55%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(38 100% 55%) 0%, hsl(25 100% 50%) 100%);
+    --gradient-danger: linear-gradient(135deg, hsl(0 85% 55%) 0%, hsl(350 90% 45%) 100%);
+    --gradient-warning: linear-gradient(135deg, hsl(38 100% 55%) 0%, hsl(25 95% 50%) 100%);
+    --gradient-safe: linear-gradient(135deg, hsl(155 75% 50%) 0%, hsl(170 70% 45%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(250 30% 8%) 0%, hsl(250 30% 4%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(260 30% 8%) 0%, hsl(280 25% 12%) 30%, hsl(300 20% 10%) 70%, hsl(250 30% 6%) 100%);
+    --gradient-official: linear-gradient(180deg, hsl(255 25% 10%) 0%, hsl(255 25% 7%) 100%);
+    --gradient-rainbow: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 80% 55%) 25%, hsl(38 100% 55%) 50%, hsl(155 75% 50%) 75%, hsl(200 90% 55%) 100%);
+    --gradient-purple-pink: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 80% 60%) 100%);
+    --gradient-teal-cyan: linear-gradient(135deg, hsl(180 70% 45%) 0%, hsl(200 85% 55%) 100%);
+    --gradient-orange-red: linear-gradient(135deg, hsl(25 95% 55%) 0%, hsl(350 90% 50%) 100%);
 
-    /* Professional Shadows */
-    --shadow-glow: 0 0 40px hsl(210 80% 55% / 0.12);
-    --shadow-danger: 0 0 30px hsl(0 75% 50% / 0.25);
-    --shadow-card: 0 4px 24px hsl(220 20% 0% / 0.6);
-    --shadow-elevated: 0 8px 32px hsl(220 20% 0% / 0.5);
+    /* Professional Shadows with color */
+    --shadow-glow: 0 0 50px hsl(262 83% 58% / 0.2);
+    --shadow-danger: 0 0 40px hsl(0 85% 55% / 0.3);
+    --shadow-card: 0 4px 30px hsl(260 30% 0% / 0.6);
+    --shadow-elevated: 0 8px 40px hsl(260 30% 0% / 0.5);
+    --shadow-pink: 0 0 40px hsl(330 80% 55% / 0.25);
+    --shadow-purple: 0 0 40px hsl(262 83% 58% / 0.25);
+    --shadow-teal: 0 0 40px hsl(180 70% 45% / 0.25);
 
-    /* Sidebar */
-    --sidebar-background: 220 20% 6%;
+    /* Sidebar - Colorful */
+    --sidebar-background: 255 25% 8%;
     --sidebar-foreground: 210 40% 92%;
-    --sidebar-primary: 210 80% 55%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 20% 14%;
+    --sidebar-accent: 255 25% 16%;
     --sidebar-accent-foreground: 210 40% 92%;
-    --sidebar-border: 215 20% 14%;
-    --sidebar-ring: 210 80% 55%;
+    --sidebar-border: 255 20% 16%;
+    --sidebar-ring: 262 83% 58%;
   }
 
   /* Light mode - Professional government style */
@@ -138,56 +145,72 @@
 }
 
 @layer components {
-  /* Official Government Badge */
+  /* Official Government Badge - Colorful */
   .govt-badge {
     @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-md;
-    @apply bg-gradient-to-r from-primary/20 to-accent/10;
-    @apply border border-primary/30;
+    background: linear-gradient(135deg, hsl(262 83% 58% / 0.2), hsl(330 80% 55% / 0.15));
+    @apply border border-primary/40;
     @apply text-sm font-medium;
   }
 
-  /* Official Header Banner */
+  /* Official Header Banner - Vibrant gradient */
   .govt-header {
     @apply py-2 px-4 text-center text-sm font-medium;
-    background: linear-gradient(90deg, hsl(210 80% 45%) 0%, hsl(220 75% 40%) 100%);
+    background: linear-gradient(90deg, hsl(262 83% 55%) 0%, hsl(280 75% 50%) 50%, hsl(330 80% 55%) 100%);
     color: white;
   }
 
-  /* Emergency Status Badges */
+  /* Emergency Status Badges - More colorful */
   .status-safe {
-    @apply bg-success text-success-foreground;
+    background: linear-gradient(135deg, hsl(155 75% 50%), hsl(170 70% 45%));
+    @apply text-white;
   }
 
   .status-warning {
-    @apply bg-warning text-warning-foreground;
+    background: linear-gradient(135deg, hsl(38 100% 55%), hsl(25 95% 50%));
+    @apply text-black;
   }
 
   .status-danger {
-    @apply bg-destructive text-destructive-foreground;
+    background: linear-gradient(135deg, hsl(0 85% 55%), hsl(350 90% 45%));
+    @apply text-white;
   }
 
   .status-critical {
     @apply animate-pulse;
-    background: hsl(var(--critical));
-    color: hsl(var(--critical-foreground));
+    background: linear-gradient(135deg, hsl(350 90% 45%), hsl(330 80% 45%));
+    color: white;
   }
 
-  /* Professional Glass Card */
+  /* Professional Glass Card - with colorful border glow */
   .glass-card {
-    @apply bg-card/90 backdrop-blur-xl border border-border/60;
-    box-shadow: var(--shadow-card);
+    @apply bg-card/90 backdrop-blur-xl;
+    border: 1px solid hsl(262 83% 58% / 0.2);
+    box-shadow: var(--shadow-card), inset 0 1px 0 0 hsl(262 83% 58% / 0.1);
   }
 
-  /* Government Official Card */
+  .glass-card:hover {
+    border-color: hsl(262 83% 58% / 0.4);
+    box-shadow: var(--shadow-card), 0 0 30px hsl(262 83% 58% / 0.1);
+  }
+
+  /* Government Official Card - Colorful */
   .official-card {
-    @apply bg-card border-2 border-border;
-    @apply rounded-lg overflow-hidden;
-    box-shadow: var(--shadow-elevated);
+    @apply bg-card border-2;
+    border-color: hsl(262 83% 58% / 0.3);
+    @apply rounded-xl overflow-hidden;
+    box-shadow: var(--shadow-elevated), 0 0 40px hsl(262 83% 58% / 0.08);
+  }
+
+  .official-card:hover {
+    border-color: hsl(330 80% 55% / 0.4);
+    box-shadow: var(--shadow-elevated), 0 0 50px hsl(330 80% 55% / 0.12);
   }
 
   .official-card-header {
-    @apply p-4 border-b border-border;
-    background: var(--gradient-official);
+    @apply p-4 border-b;
+    border-color: hsl(262 83% 58% / 0.2);
+    background: linear-gradient(180deg, hsl(262 83% 58% / 0.1) 0%, transparent 100%);
   }
 
   /* Gradient text */
@@ -207,11 +230,11 @@
   @keyframes sos-pulse {
     0%, 100% { 
       transform: scale(1);
-      box-shadow: 0 0 20px hsl(0 75% 50% / 0.5);
+      box-shadow: 0 0 25px hsl(0 85% 55% / 0.5);
     }
     50% { 
       transform: scale(1.03);
-      box-shadow: 0 0 40px hsl(0 75% 50% / 0.7);
+      box-shadow: 0 0 50px hsl(350 90% 50% / 0.7);
     }
   }
 
@@ -231,28 +254,34 @@
     50% { transform: scale(1.5); opacity: 0; }
   }
 
-  /* Map container */
+  /* Map container - Colorful border */
   .map-container {
-    @apply rounded-lg overflow-hidden border-2 border-border;
-    box-shadow: var(--shadow-elevated);
+    @apply rounded-xl overflow-hidden;
+    border: 2px solid hsl(200 90% 55% / 0.3);
+    box-shadow: var(--shadow-elevated), 0 0 40px hsl(200 90% 55% / 0.1);
   }
 
-  /* Data cards - Professional */
+  /* Data cards - Colorful */
   .data-card {
-    @apply p-4 rounded-lg bg-card;
-    border: 1px solid hsl(var(--border));
+    @apply p-4 rounded-xl bg-card;
+    border: 1px solid hsl(262 83% 58% / 0.2);
     box-shadow: var(--shadow-card);
+  }
+
+  .data-card:hover {
+    border-color: hsl(262 83% 58% / 0.4);
   }
 
   /* Emergency banner */
   .emergency-banner {
-    background: var(--gradient-danger);
-    animation: banner-flash 1s ease-in-out infinite;
+    background: linear-gradient(90deg, hsl(0 85% 55%), hsl(350 90% 50%), hsl(0 85% 55%));
+    background-size: 200% 100%;
+    animation: banner-slide 3s ease-in-out infinite;
   }
 
-  @keyframes banner-flash {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.9; }
+  @keyframes banner-slide {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 
   /* Floating chatbot */
@@ -341,13 +370,21 @@
 }
 
 @layer utilities {
-  /* Glow effects */
+  /* Glow effects - Colorful */
   .glow-primary {
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-purple);
   }
 
   .glow-danger {
     box-shadow: var(--shadow-danger);
+  }
+
+  .glow-pink {
+    box-shadow: var(--shadow-pink);
+  }
+
+  .glow-teal {
+    box-shadow: var(--shadow-teal);
   }
 
   /* Gradient backgrounds */
@@ -383,6 +420,22 @@
     background: var(--gradient-official);
   }
 
+  .bg-gradient-rainbow {
+    background: var(--gradient-rainbow);
+  }
+
+  .bg-gradient-purple-pink {
+    background: var(--gradient-purple-pink);
+  }
+
+  .bg-gradient-teal-cyan {
+    background: var(--gradient-teal-cyan);
+  }
+
+  .bg-gradient-orange-red {
+    background: var(--gradient-orange-red);
+  }
+
   /* Text gradients */
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
@@ -394,16 +447,35 @@
     background-image: var(--gradient-gold);
   }
 
+  .text-gradient-rainbow {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-rainbow);
+  }
+
+  .text-gradient-purple-pink {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-purple-pink);
+  }
+
   /* Background patterns */
   .bg-grid-pattern {
     background-image: 
-      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+      linear-gradient(hsl(262 83% 58% / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(262 83% 58% / 0.1) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
   .bg-radial-glow {
-    background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210 80% 55% / 0.15), transparent);
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(262 83% 58% / 0.2), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 0%, hsl(330 80% 55% / 0.15), transparent);
+  }
+
+  /* Animated gradient border */
+  .border-gradient {
+    border: 2px solid transparent;
+    background-image: linear-gradient(hsl(255 25% 9%), hsl(255 25% 9%)), var(--gradient-primary);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
   }
 }
 
