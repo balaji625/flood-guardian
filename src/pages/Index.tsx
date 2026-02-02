@@ -192,7 +192,8 @@ export default function Index() {
             transition={{ delay: 0.2 }}
             className="max-w-2xl mx-auto mb-12"
           >
-            <div className="official-card p-1">
+            {/* Allow LocationSearch dropdown to render outside the card */}
+            <div className="official-card p-1 overflow-visible">
               <LocationSearch onLocationSelect={handleLocationSelect} />
             </div>
           </motion.div>

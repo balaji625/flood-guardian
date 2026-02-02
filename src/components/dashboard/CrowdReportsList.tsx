@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CrowdReport } from '@/types/flood';
 import { cn } from '@/lib/utils';
+import { DeferredImage } from '@/components/DeferredImage';
 
 interface CrowdReportsListProps {
   reports: CrowdReport[];
@@ -110,6 +111,8 @@ function ImageGalleryModal({
             animate={{ opacity: 1, scale: 1 }}
             src={images[currentIndex]}
             alt={`Flood report image ${currentIndex + 1}`}
+            loading="lazy"
+            decoding="async"
             className="w-full max-h-[80vh] object-contain rounded-lg"
           />
 
@@ -192,6 +195,7 @@ export function CrowdReportsList({ reports, onVerify }: CrowdReportsListProps) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
+                    style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 140px' }}
                     className={cn(
                       'p-4 rounded-xl border-2 transition-all',
                       report.verified 
@@ -206,10 +210,11 @@ export function CrowdReportsList({ reports, onVerify }: CrowdReportsListProps) {
                           className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 cursor-pointer group"
                           onClick={() => setSelectedImages(images)}
                         >
-                          <img
+                          <DeferredImage
                             src={images[0]}
                             alt="Flood report"
-                            className="w-full h-full object-cover"
+                            wrapperClassName="w-full h-full"
+                            imgClassName="w-full h-full"
                           />
                           {images.length > 1 && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

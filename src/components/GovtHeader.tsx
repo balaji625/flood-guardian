@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ExternalLink, Sparkles, Zap, Heart } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface GovtHeaderProps {
   showEmergencyBanner?: boolean;
@@ -16,6 +17,11 @@ export function GovtHeader({ showEmergencyBanner }: GovtHeaderProps) {
           <Sparkles className="w-4 h-4" />
           <span>Official Emergency Response System • Government of India</span>
           <Sparkles className="w-4 h-4" />
+        </div>
+
+        {/* Theme toggle (Official default) */}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <ThemeToggle />
         </div>
       </div>
 
