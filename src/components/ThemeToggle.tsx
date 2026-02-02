@@ -15,17 +15,22 @@ const THEMES: Array<{ value: AppTheme; label: string; Icon: React.ElementType }>
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => setMounted(true), []);
+
   const value = (theme as AppTheme | undefined) ?? "official";
 
   return (
     <ToggleGroup
       type="single"
       value={value}
-      onValueChange={(v) => v && setTheme(v)}
+      onValueChange={(v) => setTheme((v || value) as AppTheme)}
       variant="outline"
       size="sm"
       className={cn("rounded-lg bg-background/40 backdrop-blur", className)}
       aria-label="Theme"
+      disabled={!mounted}
     >
       {THEMES.map(({ value: v, label, Icon }) => (
         <ToggleGroupItem
