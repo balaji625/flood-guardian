@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Loader2, Navigation, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -18,51 +18,71 @@ export function LocationSearch({ onLocationSelect, className }: LocationSearchPr
   const [searching, setSearching] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
 
-  // Debounced search handler
-  const handleSearch = useCallback(async (value: string) => {
+  const debounceRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  const handleSearch = useCallback((value: string) => {
     setQuery(value);
-    if (value.length < 2) {
+
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    abortRef.current?.abort();
+
+    if (value.trim().length < 2) {
+      setSearching(false);
       setResults([]);
       return;
     }
 
-    setSearching(true);
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=in&limit=5`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'FloodGuard Emergency System'
+    debounceRef.current = window.setTimeout(async () => {
+      setSearching(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=in&limit=5&addressdetails=1`,
+          {
+            signal: controller.signal,
+            headers: {
+              Accept: 'application/json',
+            },
+            // Avoid sending a referrer to third-party API
+            referrerPolicy: 'no-referrer',
           }
+        );
+
+        if (!response.ok) throw new Error(`Search failed (${response.status})`);
+
+        const data = await response.json();
+        const locations: Location[] = (data || []).map((item: any) => ({
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          name: item.display_name?.split(',')?.[0] || value,
+          state: item.display_name?.split(',')?.slice(-2, -1)?.[0]?.trim(),
+          district: item.display_name?.split(',')?.slice(1, 2)?.[0]?.trim(),
+          pincode: item.address?.postcode,
+        }));
+
+        setResults(locations);
+        if (locations.length === 0 && value.trim().length >= 3) {
+          toast.info('No locations found. Try a different search term.');
         }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Search failed');
+      } catch (error: any) {
+        if (error?.name === 'AbortError') return;
+        console.error('Location search error:', error);
+        toast.error('Search failed. Please try again.');
+        setResults([]);
+      } finally {
+        setSearching(false);
       }
-      
-      const data = await response.json();
-      const locations: Location[] = data.map((item: any) => ({
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-        name: item.display_name.split(',')[0],
-        state: item.display_name.split(',').slice(-2, -1)[0]?.trim(),
-        district: item.display_name.split(',').slice(1, 2)[0]?.trim(),
-      }));
-      
-      setResults(locations);
-      
-      if (locations.length === 0 && value.length >= 3) {
-        toast.info('No locations found. Try a different search term.');
-      }
-    } catch (error) {
-      console.error('Location search error:', error);
-      toast.error('Search failed. Please try again.');
-      setResults([]);
-    } finally {
-      setSearching(false);
-    }
+    }, 350);
   }, []);
 
   const handleGetCurrentLocation = async () => {
@@ -86,12 +106,12 @@ export function LocationSearch({ onLocationSelect, className }: LocationSearchPr
       // Reverse geocode to get location name
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
           {
             headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'FloodGuard Emergency System'
-            }
+              Accept: 'application/json',
+            },
+            referrerPolicy: 'no-referrer',
           }
         );
         

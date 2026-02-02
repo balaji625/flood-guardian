@@ -38,6 +38,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
+  // Used to ensure signIn() only resolves once auth state has propagated (prevents 2-click login)
+  const pendingSignInRef = React.useRef<{
+    resolve: () => void;
+    reject: (err: unknown) => void;
+  } | null>(null);
+
   // Initialize auth state listener ONCE
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -78,6 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(false);
       setInitialized(true);
+
+      // If a login flow is awaiting auth propagation, unblock it now.
+      if (pendingSignInRef.current) {
+        pendingSignInRef.current.resolve();
+        pendingSignInRef.current = null;
+      }
     });
 
     return () => unsubscribe();
@@ -98,8 +110,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Auth state listener will handle the rest
+      // Wait for Firebase auth state listener to set `user` before resolving.
+      await new Promise<void>((resolve, reject) => {
+        pendingSignInRef.current = { resolve, reject };
+        signInWithEmailAndPassword(auth, email, password).catch((err) => {
+          if (pendingSignInRef.current) {
+            pendingSignInRef.current.reject(err);
+            pendingSignInRef.current = null;
+          }
+        });
+      });
     } catch (err: any) {
       // Fallback for demo users if Firebase fails
       if (demoUser) {
