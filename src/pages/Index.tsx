@@ -30,6 +30,10 @@ import { AdvancedChatbot } from '@/components/AdvancedChatbot';
 import { FloodMap } from '@/components/FloodMap';
 import { CrowdReportModal } from '@/components/CrowdReportModal';
 import { GovtHeader, GovtFooter } from '@/components/GovtHeader';
+import { EmergencyAlertBanner } from '@/components/EmergencyAlertBanner';
+import { WaterLevelTrends } from '@/components/WaterLevelTrends';
+import { FamilySafetyCheck } from '@/components/FamilySafetyCheck';
+import { NearbySheltersFinder } from '@/components/NearbySheltersFinder';
 import { Location, FloodRiskData } from '@/types/flood';
 import { calculateFloodRisk, getSafetyInstructions } from '@/lib/floodRiskCalculator';
 import { useWeather } from '@/hooks/useWeather';
@@ -101,6 +105,9 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
+      {/* Emergency Alert Banner - Scrolling announcements */}
+      <EmergencyAlertBanner />
+
       {/* Government Header */}
       <GovtHeader showEmergencyBanner={riskData?.level === 'critical'} />
 
@@ -293,6 +300,39 @@ export default function Index() {
           </motion.section>
         )}
       </AnimatePresence>
+
+      {/* NEW: Live Intelligence Section - Water Trends, Family Safety, Shelters */}
+      <section className="py-12 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <Badge variant="outline" className="mb-3">
+              <Zap className="w-3 h-3 mr-1" /> Live Intelligence
+            </Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">Real-Time Safety Tools</h2>
+            <p className="text-muted-foreground">Stay informed and keep your family safe</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Water Level Trends Chart */}
+            <WaterLevelTrends 
+              locationName={selectedLocation?.name || 'Mumbai Region'} 
+              className="lg:col-span-1"
+            />
+
+            {/* Family Safety Check */}
+            <FamilySafetyCheck 
+              currentLocation={selectedLocation}
+              className="lg:col-span-1"
+            />
+
+            {/* Nearby Shelters Finder */}
+            <NearbySheltersFinder 
+              currentLocation={selectedLocation}
+              className="lg:col-span-1"
+            />
+          </div>
+        </div>
+      </section>
 
       {/* Map Section */}
       <section id="map" className="py-16">
