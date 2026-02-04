@@ -34,6 +34,11 @@ import { EmergencyAlertBanner } from '@/components/EmergencyAlertBanner';
 import { WaterLevelTrends } from '@/components/WaterLevelTrends';
 import { FamilySafetyCheck } from '@/components/FamilySafetyCheck';
 import { NearbySheltersFinder } from '@/components/NearbySheltersFinder';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { WeatherAlerts } from '@/components/WeatherAlerts';
+import { EmergencyContacts } from '@/components/EmergencyContacts';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { FloatingQuickActions } from '@/components/FloatingQuickActions';
 import { Location, FloodRiskData } from '@/types/flood';
 import { calculateFloodRisk, getSafetyInstructions } from '@/lib/floodRiskCalculator';
 import { useWeather } from '@/hooks/useWeather';
@@ -130,7 +135,9 @@ export default function Index() {
             <a href="#emergency" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Emergency</a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <OfflineIndicator />
+            <LanguageSelector variant="compact" />
             <Button 
               variant="outline" 
               onClick={() => navigate('/login')}
@@ -301,8 +308,15 @@ export default function Index() {
         )}
       </AnimatePresence>
 
+      {/* Weather Alerts Section */}
+      <section className="py-8 bg-card/30">
+        <div className="container mx-auto px-4">
+          <WeatherAlerts location={selectedLocation} className="max-w-4xl mx-auto" />
+        </div>
+      </section>
+
       {/* NEW: Live Intelligence Section - Water Trends, Family Safety, Shelters */}
-      <section className="py-12 bg-muted/30">
+      <section id="shelters" className="py-12 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <Badge variant="outline" className="mb-3">
@@ -330,6 +344,11 @@ export default function Index() {
               currentLocation={selectedLocation}
               className="lg:col-span-1"
             />
+          </div>
+
+          {/* Emergency Contacts */}
+          <div className="mt-6 max-w-md mx-auto lg:max-w-none lg:grid lg:grid-cols-2 gap-6">
+            <EmergencyContacts className="lg:col-span-1" />
           </div>
         </div>
       </section>
@@ -470,6 +489,9 @@ export default function Index() {
         onClose={() => setShowReportModal(false)}
         location={selectedLocation}
       />
+
+      {/* Floating Quick Actions */}
+      <FloatingQuickActions onSOSClick={handleSOS} />
     </div>
   );
 }
