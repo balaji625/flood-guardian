@@ -42,6 +42,7 @@ import { FloatingQuickActions } from '@/components/FloatingQuickActions';
 import { Location, FloodRiskData } from '@/types/flood';
 import { calculateFloodRisk, getSafetyInstructions } from '@/lib/floodRiskCalculator';
 import { useWeather } from '@/hooks/useWeather';
+import { VoiceActivatedSOS } from '@/components/VoiceActivatedSOS';
 
 const features = [
   { 
@@ -138,7 +139,8 @@ export default function Index() {
           <div className="flex items-center gap-2">
             <OfflineIndicator />
             <LanguageSelector variant="compact" />
-            <Button 
+            <VoiceActivatedSOS onSOSTrigger={handleSOS} />
+            <Button
               variant="outline" 
               onClick={() => navigate('/login')}
               className="hidden sm:flex gap-2"
