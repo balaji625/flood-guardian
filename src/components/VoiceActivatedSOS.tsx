@@ -118,19 +118,23 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
   }, [onSOSTrigger]);
 
   const startListening = useCallback(() => {
-    if (!recognitionRef.current || !enabled) return;
+    if (!recognitionRef.current) return;
 
     try {
       recognitionRef.current.start();
     } catch (e) {
-      // Already started
+      // Already started - ignore
     }
-  }, [enabled]);
+  }, []);
 
   const stopListening = useCallback(() => {
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.abort();
       } catch (e) {
         // Already stopped
       }
@@ -138,8 +142,8 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
     setIsListening(false);
   }, []);
 
+  // Initialize speech recognition once
   useEffect(() => {
-    // Check for browser support
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognitionAPI) {
@@ -164,7 +168,6 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
         const transcript = results[i][0].transcript.toLowerCase().trim();
         setLastHeard(transcript);
 
-        // Check for trigger words
         const triggered = TRIGGER_WORDS.some(word => transcript.includes(word));
         
         if (triggered) {
@@ -175,7 +178,10 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
     };
 
     recognition.onerror = (event: any) => {
-      console.log('Speech recognition error:', event.error);
+      // Only log non-aborted errors to avoid spam
+      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+        console.log('Speech recognition error:', event.error);
+      }
       
       if (event.error === 'not-allowed') {
         setIsSupported(false);
@@ -187,29 +193,21 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
 
     recognition.onend = () => {
       setIsListening(false);
-      
-      // Auto-restart if enabled
-      if (enabled && recognitionRef.current) {
-        restartTimeoutRef.current = setTimeout(() => {
-          startListening();
-        }, 500);
-      }
     };
 
     recognitionRef.current = recognition;
-
-    // Auto-start if enabled
-    if (enabled) {
-      startListening();
-    }
 
     return () => {
       if (restartTimeoutRef.current) {
         clearTimeout(restartTimeoutRef.current);
       }
-      stopListening();
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
     };
-  }, [enabled, startListening, stopListening, triggerSOS]);
+  }, [triggerSOS]);
 
   const toggleListening = useCallback(() => {
     if (isListening) {
