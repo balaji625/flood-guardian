@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSOSRequests } from '@/hooks/useFirebaseData';
 import { SOSRequest } from '@/types/flood';
+import { triggerHaptic } from '@/hooks/useHapticFeedback';
 
 interface SOSButtonProps {
   onClick?: () => void;
@@ -37,7 +38,10 @@ export function SOSButton({ onClick, size = 'lg', className, disabled }: SOSButt
 
   return (
     <motion.button
-      onClick={onClick}
+      onClick={() => {
+        triggerHaptic('critical');
+        onClick?.();
+      }}
       disabled={disabled}
       className={cn(
         'relative rounded-full font-bold text-white sos-button',
@@ -87,6 +91,7 @@ export function EmergencyCallButton({
   };
 
   const handleCall = () => {
+    triggerHaptic('tap');
     window.location.href = `tel:${number}`;
   };
 
@@ -218,9 +223,11 @@ export function SOSModal({ isOpen, onClose }: SOSModalProps) {
         peopleCount: formData.peopleCount,
       });
 
+      triggerHaptic('success');
       setSubmitted(true);
     } catch (err: any) {
       console.error('SOS submission error:', err);
+      triggerHaptic('error');
       setError('Failed to send SOS. Please call emergency services directly.');
     } finally {
       setLoading(false);
