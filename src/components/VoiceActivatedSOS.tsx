@@ -4,6 +4,7 @@ import { Mic, MicOff, Volume2, AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { triggerHaptic } from '@/hooks/useHapticFeedback';
 
 interface VoiceActivatedSOSProps {
   onSOSTrigger: () => void;
@@ -100,10 +101,8 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
       duration: 5000,
     });
 
-    // Vibrate if supported
-    if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200, 100, 200]);
-    }
+    // Strong SOS haptic pattern
+    triggerHaptic('sos');
 
     // Play alert sound
     try {
@@ -147,10 +146,8 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
     setShowCountdown(true);
     setCountdown(COUNTDOWN_SECONDS);
 
-    // Vibrate to alert user
-    if (navigator.vibrate) {
-      navigator.vibrate(200);
-    }
+    // Warning haptic pattern
+    triggerHaptic('warning');
 
     // Play warning beep
     try {
@@ -199,9 +196,8 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
           }, 100);
         } catch (e) {}
 
-        if (navigator.vibrate) {
-          navigator.vibrate(100);
-        }
+        // Countdown tick haptic
+        triggerHaptic('countdownTick');
       }
       
       if (timeLeft <= 0) {

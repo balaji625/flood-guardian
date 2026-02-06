@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { triggerHaptic } from '@/hooks/useHapticFeedback';
 
 interface FloatingQuickActionsProps {
   className?: string;
@@ -64,16 +65,20 @@ export function FloatingQuickActions({ className, onSOSClick }: FloatingQuickAct
 
   const handleAction = (action: typeof QUICK_ACTIONS[number]) => {
     if (action.phone) {
+      triggerHaptic('tap');
       window.location.href = `tel:${action.phone}`;
       toast.success(`Calling ${action.label}...`);
     } else if (action.scroll) {
+      triggerHaptic('selection');
       const element = document.querySelector(action.scroll);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     } else if (action.action === 'sos') {
+      triggerHaptic('critical');
       onSOSClick?.();
     } else if (action.action === 'siren') {
+      triggerHaptic('warning');
       playSiren();
     }
     
