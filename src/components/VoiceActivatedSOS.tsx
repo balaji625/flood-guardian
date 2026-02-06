@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Volume2, AlertTriangle } from 'lucide-react';
+import { Mic, MicOff, Volume2, AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -65,19 +65,35 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
   const [lastHeard, setLastHeard] = useState<string>('');
   const [showIndicator, setShowIndicator] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [showCountdown, setShowCountdown] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cooldownRef = useRef<boolean>(false);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const triggerSOS = useCallback(() => {
-    if (cooldownRef.current) return;
+  const COUNTDOWN_SECONDS = 5;
+
+  const cancelCountdown = useCallback(() => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    setCountdown(null);
+    setShowCountdown(false);
+    cooldownRef.current = false;
     
-    cooldownRef.current = true;
-    
+    toast.info('SOS Cancelled', {
+      description: 'Voice activation cancelled successfully',
+      duration: 2000,
+    });
+  }, []);
+
+  const executeSOS = useCallback(() => {
     // Visual and audio feedback
     toast.error('🚨 VOICE SOS ACTIVATED!', {
       description: 'Emergency services are being notified...',
@@ -115,12 +131,88 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
     }
 
     onSOSTrigger();
+    setShowCountdown(false);
+    setCountdown(null);
 
     // Reset cooldown after 10 seconds
     setTimeout(() => {
       cooldownRef.current = false;
     }, 10000);
   }, [onSOSTrigger]);
+
+  const triggerSOS = useCallback(() => {
+    if (cooldownRef.current) return;
+    
+    cooldownRef.current = true;
+    setShowCountdown(true);
+    setCountdown(COUNTDOWN_SECONDS);
+
+    // Vibrate to alert user
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
+
+    // Play warning beep
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 660;
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.2;
+      
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        audioContext.close();
+      }, 150);
+    } catch (e) {}
+
+    // Start countdown
+    let timeLeft = COUNTDOWN_SECONDS;
+    countdownRef.current = setInterval(() => {
+      timeLeft -= 1;
+      setCountdown(timeLeft);
+      
+      // Beep each second
+      if (timeLeft > 0) {
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.value = 660 + (COUNTDOWN_SECONDS - timeLeft) * 50;
+          oscillator.type = 'sine';
+          gainNode.gain.value = 0.15;
+          
+          oscillator.start();
+          setTimeout(() => {
+            oscillator.stop();
+            audioContext.close();
+          }, 100);
+        } catch (e) {}
+
+        if (navigator.vibrate) {
+          navigator.vibrate(100);
+        }
+      }
+      
+      if (timeLeft <= 0) {
+        if (countdownRef.current) {
+          clearInterval(countdownRef.current);
+          countdownRef.current = null;
+        }
+        executeSOS();
+      }
+    }, 1000);
+  }, [executeSOS]);
 
   const startAudioAnalysis = useCallback(async () => {
     try {
@@ -285,6 +377,84 @@ export const VoiceActivatedSOS: React.FC<VoiceActivatedSOSProps> = ({
 
   return (
     <>
+      {/* Countdown Modal */}
+      <AnimatePresence>
+        {showCountdown && countdown !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="flex flex-col items-center gap-6 p-8"
+            >
+              {/* Pulsing ring around countdown */}
+              <div className="relative">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 0, 0.5],
+                  }}
+                  transition={{ repeat: Infinity, duration: 1 }}
+                  className="absolute inset-0 rounded-full bg-destructive"
+                  style={{ width: 160, height: 160 }}
+                />
+                <motion.div
+                  animate={{
+                    scale: [1, 1.4, 1],
+                    opacity: [0.3, 0, 0.3],
+                  }}
+                  transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
+                  className="absolute inset-0 rounded-full bg-destructive"
+                  style={{ width: 160, height: 160 }}
+                />
+                
+                {/* Countdown number */}
+                <div className="relative flex items-center justify-center w-40 h-40 rounded-full bg-destructive text-destructive-foreground">
+                  <motion.span
+                    key={countdown}
+                    initial={{ scale: 1.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-7xl font-bold"
+                  >
+                    {countdown}
+                  </motion.span>
+                </div>
+              </div>
+
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold text-destructive flex items-center gap-2 justify-center">
+                  <AlertTriangle className="w-6 h-6" />
+                  SOS ACTIVATING
+                </h2>
+                <p className="text-muted-foreground">
+                  Trigger word detected! SOS will send in {countdown} seconds
+                </p>
+              </div>
+
+              {/* Cancel button */}
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={cancelCountdown}
+                className="mt-4 gap-2 px-8 py-6 text-lg border-2 hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+                Cancel SOS
+              </Button>
+
+              <p className="text-xs text-muted-foreground mt-2">
+                Tap cancel if this was accidental
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Floating Voice Indicator */}
       <AnimatePresence>
         {showIndicator && isListening && (
